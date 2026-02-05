@@ -34,13 +34,13 @@
 
 // These IDs are bogus. If you want to distribute any hardware using this,
 // you will have to get real ones.
-#define USB_VID 0xCAFE
-#define USB_PID 0xBAF2
+#define USB_VID 0x2DC8
+#define USB_PID 0x5201
 
 tusb_desc_device_t desc_device = {
     .bLength = sizeof(tusb_desc_device_t),
     .bDescriptorType = TUSB_DESC_DEVICE,
-    .bcdUSB = 0x0200,
+    .bcdUSB = 0x0110,
     .bDeviceClass = 0x00,
     .bDeviceSubClass = 0x00,
     .bDeviceProtocol = 0x00,
@@ -48,11 +48,11 @@ tusb_desc_device_t desc_device = {
 
     .idVendor = USB_VID,
     .idProduct = USB_PID,
-    .bcdDevice = 0x0100,
+    .bcdDevice = 0x0103,
 
     .iManufacturer = 0x01,
     .iProduct = 0x02,
-    .iSerialNumber = 0x00,
+    .iSerialNumber = 0x03,
 
     .bNumConfigurations = 0x01,
 };
@@ -104,12 +104,9 @@ const uint8_t* configuration_descriptors[] = {
 
 char const* string_desc_arr[] = {
     (const char[]){ 0x09, 0x04 },  // 0: is supported language is English (0x0409)
-#ifdef PICO_RP2350
-    "RP2350",  // 1: Manufacturer
-#else
-    "RP2040",  // 1: Manufacturer
-#endif
-    "HID Remapper XXXX",  // 2: Product
+    "8BitDo",  // 1: Manufacturer
+    "8BitDo Retro Keyboard Receiver",  // 2: Product
+    "00000000", // 3: Serial
 };
 
 // Invoked when received GET DEVICE DESCRIPTOR
@@ -173,10 +170,11 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
             _desc_str[1 + i] = str[i];
         }
 
-        if (index == 2) {
+        if (index == 3) {
             uint64_t unique_id = get_unique_id();
-            for (uint8_t i = 0; i < 4; i++) {
-                _desc_str[1 + chr_count - 4 + i] = id_chars[(unique_id >> (15 - i * 5)) & 0x1F];
+            // Use 8 characters to represent 40 bits of the unique ID
+            for (uint8_t i = 0; i < 8; i++) {
+                _desc_str[1 + i] = id_chars[(unique_id >> (35 - i * 5)) & 0x1F];
             }
         }
     }
