@@ -2092,3 +2092,8 @@ void handle_set_report_complete(uint16_t interface, uint8_t report_id) {
         our_descriptor->handle_set_report_complete(interface, report_id);
     }
 }
+
+bool is_right_control_held() {
+    int32_t* state_ptr = get_state_ptr(0x000700E4, 0);
+    return (state_ptr != NULL) && (*state_ptr != 0);
+}
