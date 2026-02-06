@@ -70,6 +70,15 @@ extern bool boot_protocol_updated;
 extern bool config_interface_enabled;
 extern uint64_t first_report_time;
 
+extern uint16_t their_vid;
+extern uint16_t their_pid;
+extern uint16_t their_manufacturer[128];
+extern uint16_t their_product[128];
+extern uint16_t their_serial[128];
+extern bool their_info_updated;
+extern bool first_report_has_rctrl;
+extern uint8_t pending_string_fetch_dev_addr;
+
 extern volatile PersistConfigReturnCode persist_config_return_code;
 
 #endif

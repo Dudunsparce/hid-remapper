@@ -151,7 +151,10 @@ char const* string_desc_arr[] = {
 // Invoked when received GET DEVICE DESCRIPTOR
 // Application return pointer to descriptor
 uint8_t const* tud_descriptor_device_cb() {
-    if ((our_descriptor->vid != 0) && (our_descriptor->pid != 0)) {
+    if (!config_interface_enabled && (their_vid != 0) && (their_pid != 0)) {
+        desc_device.idVendor = their_vid;
+        desc_device.idProduct = their_pid;
+    } else if ((our_descriptor->vid != 0) && (our_descriptor->pid != 0)) {
         desc_device.idVendor = our_descriptor->vid;
         desc_device.idProduct = our_descriptor->pid;
     }
@@ -182,7 +185,7 @@ uint8_t const* tud_hid_descriptor_report_cb(uint8_t itf) {
     return NULL;
 }
 
-static uint16_t _desc_str[32];
+static uint16_t _desc_str[128];
 
 const char id_chars[33] = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 
@@ -198,27 +201,46 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
         // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.
         // https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/microsoft-defined-usb-descriptors
 
-        if (!(index < sizeof(string_desc_arr) / sizeof(string_desc_arr[0])))
+        uint16_t* utf16_str = NULL;
+        const char* ascii_str = NULL;
+
+        if (!config_interface_enabled && their_info_updated && (their_manufacturer[0] != 0) && (index == 1)) {
+            utf16_str = their_manufacturer;
+        } else if (!config_interface_enabled && their_info_updated && (their_product[0] != 0) && (index == 2)) {
+            utf16_str = their_product;
+        } else if (!config_interface_enabled && their_info_updated && (their_serial[0] != 0) && (index == 3)) {
+            utf16_str = their_serial;
+        } else if (index < sizeof(string_desc_arr) / sizeof(string_desc_arr[0])) {
+            ascii_str = string_desc_arr[index];
+        } else {
             return NULL;
-
-        const char* str = string_desc_arr[index];
-
-        // Cap at max char
-        chr_count = strlen(str);
-        if (chr_count > 31)
-            chr_count = 31;
-
-        // Convert ASCII string into UTF-16
-        for (uint8_t i = 0; i < chr_count; i++) {
-            _desc_str[1 + i] = str[i];
         }
 
-        if (index == 3) {
+        if (utf16_str != NULL) {
+            chr_count = 0;
+            while ((chr_count < 126) && (utf16_str[chr_count] != 0)) {
+                _desc_str[1 + chr_count] = utf16_str[chr_count];
+                chr_count++;
+            }
+        } else {
+            // Cap at max char
+            chr_count = strlen(ascii_str);
+            if (chr_count > 31)
+                chr_count = 31;
+
+            // Convert ASCII string into UTF-16
+            for (uint8_t i = 0; i < chr_count; i++) {
+                _desc_str[1 + i] = ascii_str[i];
+            }
+        }
+
+        if ((utf16_str == NULL) && (index == 3)) {
             uint64_t unique_id = get_unique_id();
             // Use 8 characters to represent 40 bits of the unique ID
             for (uint8_t i = 0; i < 8; i++) {
                 _desc_str[1 + i] = id_chars[(unique_id >> (35 - i * 5)) & 0x1F];
             }
+            chr_count = 8;
         }
     }
 

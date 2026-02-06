@@ -1640,10 +1640,6 @@ void do_handle_received_report(const uint8_t* report, int len, uint16_t interfac
         return;
     }
 
-    if (first_report_time == 0) {
-        first_report_time = get_time();
-    }
-
     reports_received++;
 
     my_mutex_enter(MutexId::THEIR_USAGES);
@@ -1686,6 +1682,13 @@ void do_handle_received_report(const uint8_t* report, int len, uint16_t interfac
             } else {
                 monitor_read_input_range(report, len, their_usage, their_usage_def, interface_idx, hub_port);
             }
+        }
+    }
+
+    if (first_report_time == 0) {
+        first_report_time = get_time();
+        if (is_right_control_held()) {
+            first_report_has_rctrl = true;
         }
     }
 
@@ -2050,6 +2053,10 @@ void device_connected_callback(uint16_t interface, uint16_t vid, uint16_t pid, u
     hub_ports[interface >> 8] = (hub_port != 0) ? hub_port : HUB_PORT_NONE;
     if (our_descriptor->device_connected != nullptr) {
         our_descriptor->device_connected(interface, vid, pid);
+    }
+    if ((interface & 0xFF) == 0) {
+        their_vid = vid;
+        their_pid = pid;
     }
 }
 

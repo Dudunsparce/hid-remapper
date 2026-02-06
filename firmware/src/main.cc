@@ -284,10 +284,37 @@ int main() {
 #ifdef MCP4651_ENABLED
             mcp4651_write();
 #endif
+            if (pending_string_fetch_dev_addr != 0) {
+                if (XFER_RESULT_SUCCESS == tuh_descriptor_get_manufacturer_string_sync(pending_string_fetch_dev_addr, 0x0409, their_manufacturer, 127)) {
+                    // success
+                } else {
+                    their_manufacturer[0] = 0;
+                }
+                if (XFER_RESULT_SUCCESS == tuh_descriptor_get_product_string_sync(pending_string_fetch_dev_addr, 0x0409, their_product, 127)) {
+                    // success
+                } else {
+                    their_product[0] = 0;
+                }
+                if (XFER_RESULT_SUCCESS == tuh_descriptor_get_serial_string_sync(pending_string_fetch_dev_addr, 0x0409, their_serial, 127)) {
+                    // success
+                } else {
+                    their_serial[0] = 0;
+                }
+                their_info_updated = true;
+                pending_string_fetch_dev_addr = 0;
+
+                // Force re-enumeration to show new strings
+                if (!config_interface_enabled) {
+                    tud_disconnect();
+                    sleep_ms(200);
+                    tud_connect();
+                }
+            }
+
             // Enable config interface if Right Control is held.
             // Check that the device was recently booted (< 60s) and input just started (< 2s)
             // to prevent accidental activation during normal operation.
-            if (!config_interface_enabled && is_right_control_held() && (first_report_time > 0) && (first_report_time < 60000000) && ((time_us_64() - first_report_time) < 2000000)) {
+            if (!config_interface_enabled && first_report_has_rctrl && (first_report_time > 0) && (first_report_time < 60000000) && ((time_us_64() - first_report_time) < 2000000)) {
                 config_interface_enabled = true;
                 tud_disconnect();
                 sleep_ms(200);

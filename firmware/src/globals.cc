@@ -56,4 +56,13 @@ bool boot_protocol_updated = false;
 bool config_interface_enabled = false;
 uint64_t first_report_time = 0;
 
+uint16_t their_vid = 0;
+uint16_t their_pid = 0;
+uint16_t their_manufacturer[128] = { 0 };
+uint16_t their_product[128] = { 0 };
+uint16_t their_serial[128] = { 0 };
+bool their_info_updated = false;
+bool first_report_has_rctrl = false;
+uint8_t pending_string_fetch_dev_addr = 0;
+
 volatile PersistConfigReturnCode persist_config_return_code = PersistConfigReturnCode::UNKNOWN;
