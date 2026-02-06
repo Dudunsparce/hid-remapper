@@ -434,4 +434,16 @@ struct __attribute__((packed)) uint16_val_t {
     uint16_t val;
 };
 
+struct __attribute__((packed)) cached_device_info_t {
+    uint32_t magic;
+    uint16_t vid;
+    uint16_t pid;
+    uint16_t manufacturer[128];
+    uint16_t product[128];
+    uint16_t serial[128];
+    uint32_t crc32;
+};
+
+#define CACHED_DEVICE_INFO_MAGIC 0xCAFEBABE
+
 #endif

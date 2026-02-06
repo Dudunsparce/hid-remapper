@@ -2,6 +2,8 @@
 #include <cstring>
 #include <unordered_set>
 
+#include <hardware/flash.h>
+
 #include "config.h"
 #include "crc.h"
 #include "globals.h"
@@ -823,6 +825,57 @@ PersistConfigReturnCode persist_config() {
 void reset_resolution_multiplier() {
     // reset hi-res scroll on reboots
     resolution_multiplier = 0;
+}
+
+#if PICO_RP2350
+#define CONFIG_OFFSET_IN_FLASH (PICO_FLASH_SIZE_BYTES - PERSISTED_CONFIG_SIZE - 4096)
+#else
+#define CONFIG_OFFSET_IN_FLASH (PICO_FLASH_SIZE_BYTES - PERSISTED_CONFIG_SIZE)
+#endif
+
+#define CACHED_DEVICE_INFO_OFFSET_IN_FLASH (CONFIG_OFFSET_IN_FLASH - 4096)
+#define FLASH_CACHED_DEVICE_INFO_IN_MEMORY (((uint8_t*) XIP_BASE) + CACHED_DEVICE_INFO_OFFSET_IN_FLASH)
+
+void load_cached_device_info() {
+    const cached_device_info_t* info = (const cached_device_info_t*) FLASH_CACHED_DEVICE_INFO_IN_MEMORY;
+    if ((info->magic == CACHED_DEVICE_INFO_MAGIC) && (info->crc32 == crc32((const uint8_t*) info, sizeof(cached_device_info_t) - 4))) {
+        their_vid = info->vid;
+        their_pid = info->pid;
+        memcpy(their_manufacturer, info->manufacturer, sizeof(their_manufacturer));
+        memcpy(their_product, info->product, sizeof(their_product));
+        memcpy(their_serial, info->serial, sizeof(their_serial));
+        their_info_updated = true;
+    }
+}
+
+bool get_cached_device_info(cached_device_info_t* info) {
+    const cached_device_info_t* stored = (const cached_device_info_t*) FLASH_CACHED_DEVICE_INFO_IN_MEMORY;
+    if ((stored->magic == CACHED_DEVICE_INFO_MAGIC) && (stored->crc32 == crc32((const uint8_t*) stored, sizeof(cached_device_info_t) - 4))) {
+        *info = *stored;
+        return true;
+    }
+    return false;
+}
+
+void persist_cached_device_info() {
+    cached_device_info_t info;
+    memset(&info, 0, sizeof(info));
+    info.magic = CACHED_DEVICE_INFO_MAGIC;
+    info.vid = their_vid;
+    info.pid = their_pid;
+    memcpy(info.manufacturer, their_manufacturer, sizeof(info.manufacturer));
+    memcpy(info.product, their_product, sizeof(info.product));
+    memcpy(info.serial, their_serial, sizeof(info.serial));
+    info.crc32 = crc32((const uint8_t*) &info, sizeof(info) - 4);
+
+#if !PICO_COPY_TO_RAM
+    uint32_t ints = save_and_disable_interrupts();
+#endif
+    flash_range_erase(CACHED_DEVICE_INFO_OFFSET_IN_FLASH, 4096);
+    flash_range_program(CACHED_DEVICE_INFO_OFFSET_IN_FLASH, (const uint8_t*) &info, sizeof(info));
+#if !PICO_COPY_TO_RAM
+    restore_interrupts(ints);
+#endif
 }
 
 uint16_t handle_get_report1(uint8_t report_id, uint8_t* buffer, uint16_t reqlen) {

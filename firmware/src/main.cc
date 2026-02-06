@@ -248,6 +248,7 @@ int main() {
 #endif
     tick_init();
     load_config(FLASH_CONFIG_IN_MEMORY);
+    load_cached_device_info();
     our_descriptor = &our_descriptors[our_descriptor_number];
     parse_our_descriptor();
     set_mapping_from_config();
@@ -303,11 +304,22 @@ int main() {
                 their_info_updated = true;
                 pending_string_fetch_dev_addr = 0;
 
-                // Force re-enumeration to show new strings
-                if (!config_interface_enabled) {
-                    tud_disconnect();
-                    sleep_ms(200);
-                    tud_connect();
+                cached_device_info_t cached_info;
+                bool has_cached = get_cached_device_info(&cached_info);
+
+                if (!has_cached ||
+                    (their_vid != cached_info.vid) ||
+                    (their_pid != cached_info.pid) ||
+                    (memcmp(their_manufacturer, cached_info.manufacturer, sizeof(their_manufacturer)) != 0) ||
+                    (memcmp(their_product, cached_info.product, sizeof(their_product)) != 0) ||
+                    (memcmp(their_serial, cached_info.serial, sizeof(their_serial)) != 0)) {
+                    persist_cached_device_info();
+                    // Force re-enumeration to show new strings
+                    if (!config_interface_enabled) {
+                        tud_disconnect();
+                        sleep_ms(200);
+                        tud_connect();
+                    }
                 }
             }
 
