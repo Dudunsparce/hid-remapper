@@ -102,6 +102,45 @@ const uint8_t* configuration_descriptors[] = {
     configuration_descriptor5,
 };
 
+const uint8_t configuration_descriptor0_minimal[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_HID_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_KEYBOARD, our_descriptors[0].descriptor_length, 0x81, CFG_TUD_HID_EP_BUFSIZE, 1),
+};
+
+const uint8_t configuration_descriptor1_minimal[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_HID_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_KEYBOARD, our_descriptors[1].descriptor_length, 0x81, CFG_TUD_HID_EP_BUFSIZE, 1),
+};
+
+const uint8_t configuration_descriptor2_minimal[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN, 0, 100),
+    TUD_HID_INOUT_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_NONE, our_descriptors[2].descriptor_length, 0x02, 0x81, CFG_TUD_HID_EP_BUFSIZE, 1),
+};
+
+const uint8_t configuration_descriptor3_minimal[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN, 0, 100),
+    TUD_HID_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_NONE, our_descriptors[3].descriptor_length, 0x81, CFG_TUD_HID_EP_BUFSIZE, 1),
+};
+
+const uint8_t configuration_descriptor4_minimal[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN, 0, 100),
+    TUD_HID_INOUT_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_NONE, our_descriptors[4].descriptor_length, 0x02, 0x81, CFG_TUD_HID_EP_BUFSIZE, 1),
+};
+
+const uint8_t configuration_descriptor5_minimal[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN, 0, 100),
+    TUD_HID_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_NONE, our_descriptors[5].descriptor_length, 0x81, CFG_TUD_HID_EP_BUFSIZE, 1),
+};
+
+const uint8_t* configuration_descriptors_minimal[] = {
+    configuration_descriptor0_minimal,
+    configuration_descriptor1_minimal,
+    configuration_descriptor2_minimal,
+    configuration_descriptor3_minimal,
+    configuration_descriptor4_minimal,
+    configuration_descriptor5_minimal,
+};
+
 char const* string_desc_arr[] = {
     (const char[]){ 0x09, 0x04 },  // 0: is supported language is English (0x0409)
     "8BitDo",  // 1: Manufacturer
@@ -119,11 +158,15 @@ uint8_t const* tud_descriptor_device_cb() {
     return (uint8_t const*) &desc_device;
 }
 
-// Invoked when received GET CONFIGURATION DESCRIPTOR
+// Invoked when received GET Configuration DESCRIPTOR
 // Application return pointer to descriptor
 // Descriptor contents must exist long enough for transfer to complete
 uint8_t const* tud_descriptor_configuration_cb(uint8_t index) {
-    return configuration_descriptors[our_descriptor->idx];
+    if (config_interface_enabled) {
+        return configuration_descriptors[our_descriptor->idx];
+    } else {
+        return configuration_descriptors_minimal[our_descriptor->idx];
+    }
 }
 
 // Invoked when received GET HID REPORT DESCRIPTOR
