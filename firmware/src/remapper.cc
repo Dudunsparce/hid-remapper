@@ -1640,6 +1640,10 @@ void do_handle_received_report(const uint8_t* report, int len, uint16_t interfac
         return;
     }
 
+    if (first_report_time == 0) {
+        first_report_time = get_time();
+    }
+
     reports_received++;
 
     my_mutex_enter(MutexId::THEIR_USAGES);
@@ -2091,4 +2095,9 @@ void handle_set_report_complete(uint16_t interface, uint8_t report_id) {
     if (our_descriptor->handle_set_report_complete != nullptr) {
         our_descriptor->handle_set_report_complete(interface, report_id);
     }
+}
+
+bool is_right_control_held() {
+    int32_t* state_ptr = get_state_ptr(0x000700E4, 0);
+    return (state_ptr != NULL) && (*state_ptr != 0);
 }

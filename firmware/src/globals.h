@@ -67,6 +67,9 @@ extern std::vector<quirk_t> quirks;
 extern bool boot_protocol_keyboard;
 extern bool boot_protocol_updated;
 
+extern bool config_interface_enabled;
+extern uint64_t first_report_time;
+
 extern volatile PersistConfigReturnCode persist_config_return_code;
 
 #endif
