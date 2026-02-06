@@ -1640,6 +1640,10 @@ void do_handle_received_report(const uint8_t* report, int len, uint16_t interfac
         return;
     }
 
+    if (first_report_time == 0) {
+        first_report_time = get_time();
+    }
+
     reports_received++;
 
     my_mutex_enter(MutexId::THEIR_USAGES);

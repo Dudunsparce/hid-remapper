@@ -284,7 +284,7 @@ int main() {
 #ifdef MCP4651_ENABLED
             mcp4651_write();
 #endif
-            if (!config_interface_enabled && is_right_control_held()) {
+            if (!config_interface_enabled && is_right_control_held() && (first_report_time > 0) && (first_report_time < 60000000) && ((time_us_64() - first_report_time) < 2000000)) {
                 config_interface_enabled = true;
                 tud_disconnect();
                 sleep_ms(200);
